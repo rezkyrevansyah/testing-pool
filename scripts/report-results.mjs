@@ -18,11 +18,12 @@ const cypressPassed = process.env.CYPRESS_OUTCOME === 'success'
 const resultsPath = 'cypress/results/results.json'
 
 async function markError(message) {
-  console.error(message)
+  console.error('[report-results] FATAL:', message)
   await supabase.from('test_runs').update({
     status: 'error',
     completed_at: new Date().toISOString(),
   }).eq('id', runId)
+  process.exit(1)
 }
 
 /**
@@ -165,6 +166,16 @@ async function main() {
     totalDuration += duration
 
     console.log(`  ✓ ${specFileName}: ${passed} passed, ${failed} failed, ${pending} pending`)
+  }
+
+  // Guard: jika semua spec tidak ditemukan di DB, hasilnya 0/0/0 — tandai error
+  if ((totalPassed + totalFailed + totalPending) === 0 && specFiles.length > 0) {
+    await markError(
+      `No specs matched in DB for suite "${suiteName}". ` +
+      `Ran ${specFiles.length} spec(s) but none found in specs table. ` +
+      `Run sync-suites workflow first.`
+    )
+    return
   }
 
   // Update the test_run summary

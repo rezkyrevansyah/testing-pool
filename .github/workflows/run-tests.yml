@@ -62,6 +62,16 @@ jobs:
             --reporter json \
             --reporter-options output=cypress/results/results.json
 
+      - name: Verify results file
+        if: always()
+        run: |
+          if [ -f cypress/results/results.json ]; then
+            echo "results.json found ($(wc -c < cypress/results/results.json) bytes)"
+          else
+            echo "ERROR: results.json NOT created"
+            ls -la cypress/results/ || echo "No results/ dir"
+          fi
+
       - name: Report results to Supabase
         if: always()
         env:
