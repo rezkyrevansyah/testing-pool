@@ -18,7 +18,6 @@ if (!status) {
 
 const update = {
   status,
-  updated_at: new Date().toISOString(),
 }
 
 if (status === 'running') {
