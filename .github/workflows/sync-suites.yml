@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'cypress/e2e/**'
+  workflow_dispatch:
 
 jobs:
   sync:
