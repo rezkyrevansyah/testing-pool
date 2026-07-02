@@ -56,9 +56,11 @@ jobs:
       - name: Run Cypress
         id: cypress
         continue-on-error: true
-        uses: cypress-io/github-action@v6
-        with:
-          spec: ${{ steps.spec.outputs.pattern }}
+        run: |
+          npx cypress run \
+            --spec "${{ steps.spec.outputs.pattern }}" \
+            --reporter json \
+            --reporter-options output=cypress/results/results.json
 
       - name: Report results to Supabase
         if: always()
