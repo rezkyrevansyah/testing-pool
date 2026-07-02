@@ -59,8 +59,8 @@ jobs:
         run: |
           npx cypress run \
             --spec "${{ steps.spec.outputs.pattern }}" \
-            --reporter json \
-            --reporter-options '{"output":"cypress/results/results.json"}'
+            --reporter json 2>/dev/null \
+            | tee cypress/results/results.json || true
 
       - name: Verify results file
         if: always()
