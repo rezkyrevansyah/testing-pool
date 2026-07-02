@@ -1,0 +1,21 @@
+{
+  "name": "testing-pool",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
+    "cy:run:headed": "cypress run --headed"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.110.0",
+    "@types/node": "^26.1.0",
+    "cypress": "^15.18.0",
+    "typescript": "^5.9.3"
+  }
+}
