@@ -1,0 +1,74 @@
+name: Run Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite_name:
+        description: 'Suite folder name under cypress/e2e/ (e.g. backend-zapper)'
+        required: true
+        type: string
+      spec_file:
+        description: 'Specific spec filename (e.g. login.cy.ts). Leave empty to run all specs in suite.'
+        required: false
+        type: string
+        default: ''
+      run_id:
+        description: 'QA Dashboard test_runs.id (UUID) — used to update status in Supabase'
+        required: true
+        type: string
+
+jobs:
+  run-cypress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Mark run as "running" in Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RUN_ID: ${{ inputs.run_id }}
+          GH_RUN_ID: ${{ github.run_id }}
+          GH_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/update-run-status.mjs running
+
+      - name: Determine spec pattern
+        id: spec
+        run: |
+          if [ -n "${{ inputs.spec_file }}" ]; then
+            echo "pattern=cypress/e2e/${{ inputs.suite_name }}/${{ inputs.spec_file }}" >> $GITHUB_OUTPUT
+          else
+            echo "pattern=cypress/e2e/${{ inputs.suite_name }}/**/*.cy.{ts,js}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create results directory
+        run: mkdir -p cypress/results
+
+      - name: Run Cypress
+        id: cypress
+        continue-on-error: true
+        uses: cypress-io/github-action@v6
+        with:
+          spec: ${{ steps.spec.outputs.pattern }}
+          reporter: json
+          reporter-options: output=cypress/results/results.json
+
+      - name: Report results to Supabase
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RUN_ID: ${{ inputs.run_id }}
+          SUITE_NAME: ${{ inputs.suite_name }}
+          SPEC_FILE: ${{ inputs.spec_file }}
+          CYPRESS_OUTCOME: ${{ steps.cypress.outcome }}
+        run: node scripts/report-results.mjs
